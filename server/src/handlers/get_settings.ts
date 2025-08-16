@@ -1,8 +1,18 @@
+import { db } from '../db';
+import { settingsTable } from '../db/schema';
 import { type Settings } from '../schema';
 
-export async function getSettings(): Promise<Settings[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all configuration settings from the database.
-    // Should return all global settings like user limits, timeouts, auto-reset intervals.
-    return Promise.resolve([]);
-}
+export const getSettings = async (): Promise<Settings[]> => {
+  try {
+    // Fetch all settings from the database
+    const result = await db.select()
+      .from(settingsTable)
+      .execute();
+
+    // Return settings - no numeric conversions needed as all fields are text/integers
+    return result;
+  } catch (error) {
+    console.error('Settings retrieval failed:', error);
+    throw error;
+  }
+};

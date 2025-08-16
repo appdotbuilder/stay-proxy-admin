@@ -1,9 +1,41 @@
-export async function deleteUser(userId: number): Promise<{ success: boolean; message: string }> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is removing a user account from the database.
-    // Should validate that user exists and handle any related data cleanup.
-    return Promise.resolve({
-        success: true,
-        message: 'User deleted successfully'
-    });
-}
+import { db } from '../db';
+import { usersTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+export const deleteUser = async (userId: number): Promise<{ success: boolean; message: string }> => {
+  try {
+    // First check if user exists
+    const existingUser = await db.select()
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .execute();
+
+    if (existingUser.length === 0) {
+      return {
+        success: false,
+        message: 'User not found'
+      };
+    }
+
+    // Delete the user
+    const result = await db.delete(usersTable)
+      .where(eq(usersTable.id, userId))
+      .returning()
+      .execute();
+
+    if (result.length === 0) {
+      return {
+        success: false,
+        message: 'Failed to delete user'
+      };
+    }
+
+    return {
+      success: true,
+      message: 'User deleted successfully'
+    };
+  } catch (error) {
+    console.error('User deletion failed:', error);
+    throw error;
+  }
+};

@@ -1,13 +1,41 @@
+import { db } from '../db';
+import { proxiesTable } from '../db/schema';
 import { type ProxyDetails } from '../schema';
+import { eq } from 'drizzle-orm';
 
-export async function getProxyDetails(proxyId: number): Promise<ProxyDetails | null> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching proxy connection details for clipboard copy.
-    // Should return the proxy's public IP, port, username, and password for easy copying.
-    return Promise.resolve({
-        public_ip: '192.168.1.100',
-        port: 8080,
-        username: 'proxy_user',
-        password: 'proxy_pass'
-    });
-}
+export const getProxyDetails = async (proxyId: number): Promise<ProxyDetails | null> => {
+  try {
+    // Query the proxy with the specified ID
+    const result = await db.select({
+      public_ip: proxiesTable.public_ip,
+      port: proxiesTable.port,
+      username: proxiesTable.username,
+      password: proxiesTable.password,
+    })
+      .from(proxiesTable)
+      .where(eq(proxiesTable.id, proxyId))
+      .execute();
+
+    // Return null if proxy not found
+    if (result.length === 0) {
+      return null;
+    }
+
+    const proxy = result[0];
+
+    // Return null if proxy doesn't have a public IP (not online/configured)
+    if (!proxy.public_ip) {
+      return null;
+    }
+
+    return {
+      public_ip: proxy.public_ip,
+      port: proxy.port,
+      username: proxy.username,
+      password: proxy.password,
+    };
+  } catch (error) {
+    console.error('Get proxy details failed:', error);
+    throw error;
+  }
+};
